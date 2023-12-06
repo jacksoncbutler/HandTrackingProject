@@ -53,19 +53,21 @@ class HandDetector:
 
         self._positions[hand] = values
         # print(self._positions)
-        
-        
-    def get_positions(self, hand:int, indicies:list):
-        returnLyst = []
+    
+    def get_positions(self, hand:int, indicies:list=(range(21))):
+        returnLyst = {}
         if hand < 0:
-            for currentHand in range(len(self.positions.keys())):
+            for handIndex in range(len(self.positions.keys())):
+                currentHand = self.positions[handIndex]
+                returnLyst[handIndex] = []
                 for index in indicies:
-                    returnLyst.append(currentHand[index])
+                    returnLyst[handIndex].append(currentHand[index])
         else:
             # print(self.positions)
             currentHand = self.positions[hand]
+            returnLyst[hand] = []
             for index in indicies:
-                returnLyst.append(currentHand[index])
+                returnLyst[hand].append(currentHand[index])
         return returnLyst
     
     
@@ -130,8 +132,6 @@ def main():
         
         cv2.imshow("Image", detector.img)
         cv2.waitKey(1) 
-    
-    
     
     
     
