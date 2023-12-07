@@ -1,4 +1,7 @@
 
 mediapipe
 tensorflow
+keras
 pygame
+pandas
+scikit-learn

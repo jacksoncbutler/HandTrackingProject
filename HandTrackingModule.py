@@ -21,7 +21,7 @@ class HandDetector:
         for hand in range(maxHands):
             tempList = []
             for i in range(21):
-                tempList.append((i, -1, -1))
+                tempList.append((hand, i, -1, -1))
             self.positions = (hand, tempList)
         
     @property
@@ -87,7 +87,7 @@ class HandDetector:
                 for id, landmark in enumerate(hand.landmark):
                     height, width, channels = self.img.shape
                     centerX, centerY = int(landmark.x*width), int(landmark.y*height)
-                    tempPositions.append((id, centerX, centerY))
+                    tempPositions.append((handCount, id, centerX, centerY))
                 self.positions = (handCount, tempPositions)
                 handCount += 1
             
@@ -132,7 +132,6 @@ def main():
         
         cv2.imshow("Image", detector.img)
         cv2.waitKey(1) 
-    
     
     
 if __name__ == "__main__":
