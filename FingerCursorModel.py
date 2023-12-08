@@ -6,6 +6,9 @@ import json
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
+from matplotlib import pyplot as plt
+
+name = "other_predict"
 
 dataFile = "/Users/jackcameback/Classes/Fall2023/MachineLearning/HandTrackingProject/data/FingerCursorData.json"
 trainX = [] # train Data
@@ -53,41 +56,57 @@ print("X DataFrame:")
 print(x_result_df)
 print("\nY DataFrame:")
 print(y_result_df)
-# target_df = pd.concat([x_result_df["target"], y_result_df["target"]], axis=1)
-# print(target_df)
-# combined_df = pd.concat([x_result_df, y_result_df], axis=1)
-# print(combined_df)
-# combined_df.drop("target",axis=1, inplace=True)
-# print(combined_df)
-x_target = pd.Series(x_result_df["target"])
-x_result_df.drop(["target"], axis=1, inplace=True)
-print(x_target)
-y_target = pd.Series(y_result_df["target"])
-y_result_df.drop(["target"], axis=1, inplace=True)
-print(y_target)
 
-X_train, X_test, y_train, y_test = train_test_split(x_result_df, x_target, test_size=0.2, random_state=42)
+target_df = pd.concat([x_result_df["target"], y_result_df["target"]], axis=1)
+print(target_df)
 
+combined_df = pd.concat([x_result_df, y_result_df], axis=1)
+print(combined_df)
+combined_df.drop("target",axis=1, inplace=True)
+print(combined_df)
+print('combined_shape:', combined_df.shape)
+
+feature_tensor = combined_df.to_numpy()
+target_tensor = target_df.to_numpy()
+
+# resultTensor = 
+print(target_tensor)
+print(target_tensor.shape)
+
+# exit()
+X_train, X_test, y_train, y_test = train_test_split(feature_tensor, target_tensor, test_size=0.2, random_state=42, shuffle=True)
+# final dense 2
+# Look to adding drop out layers
+# Between dense layers Tell it the fraction of nodes todrop out, between 25-50%
+# Weight Decay - an option on the layers
+# chapter 5 148-150 drop out and regularization
 model = keras.Sequential([
     Dense(84, input_dim=X_train.shape[1], activation='relu'),
     Dense(42, activation='relu'),
     Dense(21, activation='relu'),
-    Dense(1)
+    Dense(2)
 ])
 
-model.compile(loss='mean_squared_error')
-model.fit(X_train, y_train, epochs=50, batch_size=8, verbose=1, validation_data=(X_test, y_test))
+model.compile(loss='mean_squared_error', metrics=['accuracy'])
+history = model.fit(X_train, y_train, epochs=50, batch_size=8, verbose=1, validation_data=(X_test, y_test), shuffle=True)
 
+# history = model1.fit(train_x, train_y,validation_split = 0.1, epochs=50, batch_size=4)
+plt.plot(history.history['accuracy'])
+plt.plot(history.history['val_accuracy'])
+plt.title('model accuracy')
+plt.ylabel('accuracy')
+plt.xlabel('epoch')
+plt.legend(['train', 'val'], loc='upper left')
+plt.show()
 y_pred = model.predict(X_test)
 
-from sklearn.metrics import mean_squared_error, mean_absolute_error
 
-mse = mean_squared_error(y_test, y_pred)
-mae = mean_absolute_error(y_test, y_pred)
+model.save(f'/Users/jackcameback/Classes/Fall2023/MachineLearning/HandTrackingProject/models/y_{name}.keras')
 
-print(f"Mean Squared Error (MSE): {mse}")
-print(f"Mean Absolute Error (MAE): {mae}")
-model.save('/Users/jackcameback/Classes/Fall2023/MachineLearning/HandTrackingProject/models/x_predict.keras')
+# Make the validation graph
+#  Look for overfitting
+
+
 # For X
 # Mean Squared Error (MSE): 77428.81399834645
 # Mean Absolute Error (MAE): 195.75334760194184

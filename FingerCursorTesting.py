@@ -14,9 +14,11 @@ RED =       (255,   0,   0)
 TEXTCOLOR = (  0,   0,  0)
 (width, height) = (1680, 1022)
 
+name="other_predict"
+
 running = True
-modelX = keras.models.load_model('/Users/jackcameback/Classes/Fall2023/MachineLearning/HandTrackingProject/models/x_predict.keras')
-modelY = keras.models.load_model('/Users/jackcameback/Classes/Fall2023/MachineLearning/HandTrackingProject/models/y_predict.keras')
+model = keras.models.load_model(f'/Users/jackcameback/Classes/Fall2023/MachineLearning/HandTrackingProject/models/y_{name}.keras')
+
 
 data = {"0":[], "dot":[]}
 
@@ -50,6 +52,8 @@ def main():
         
         
         # cv2.imshow("Image", detector.img)
+        handPos = detector.get_positions(-1)    
+        predictLocation(pos, handPos)
         cv2.waitKey(1) 
         
         ev = pygame.event.get()
@@ -95,6 +99,7 @@ def predictLocation(pos, handPos):
         
     dataFrame = pd.DataFrame.from_dict(tempDict)
     x_result_df, y_result_df = split_coordinates(dataFrame)
+    
     print("X DataFrame:")
     print(x_result_df)
     print("\nY DataFrame:")
@@ -105,14 +110,15 @@ def predictLocation(pos, handPos):
     y_target = pd.Series(y_result_df["target"])
     y_result_df.drop(["target"], axis=1, inplace=True)
     print(y_target)
-    x = modelX.predict(x_result_df)
-    y = modelY.predict(y_result_df)
-    print(x,y)
-    drawCircle((x[0][0],y[0][0]))
     
+    combined_df = pd.concat([x_result_df, y_result_df], axis=1)
+    print(combined_df.shape)
+    feature_tensor = combined_df.to_numpy()
     
-    
-    
+    val = model.predict(feature_tensor)
+    print(val)
+    # print(x,y)
+    drawCircle(val[0])
     
     
 def split_coordinates(df):
