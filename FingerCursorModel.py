@@ -1,6 +1,6 @@
 import tensorflow as tf
 import keras
-from keras.layers import Dense
+from keras.layers import Dense, Dropout
 import numpy as np
 import json
 import pandas as pd
@@ -8,7 +8,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from matplotlib import pyplot as plt
 
-name = "other_predict"
+name = "small_v6_noShuffle-05"
 
 dataFile = "/Users/jackcameback/Classes/Fall2023/MachineLearning/HandTrackingProject/data/FingerCursorData.json"
 trainX = [] # train Data
@@ -62,19 +62,31 @@ print(target_df)
 
 combined_df = pd.concat([x_result_df, y_result_df], axis=1)
 print(combined_df)
+indicies = [np.random.randint(0,combined_df.shape[0]) for _ in range(int(combined_df.shape[0]*0.2))]
+
+test_df = combined_df.loc[indicies]
+combined_df.drop(indicies, axis=0, inplace=True)
+train_target_df = combined_df[["target"]].copy()
 combined_df.drop("target",axis=1, inplace=True)
 print(combined_df)
+
+y_test_df = test_df[["target"]].copy()
+test_df.drop("target",axis=1, inplace=True)
+
+
 print('combined_shape:', combined_df.shape)
 
-feature_tensor = combined_df.to_numpy()
-target_tensor = target_df.to_numpy()
+X_train = combined_df.to_numpy()
+y_train = train_target_df.to_numpy()
+X_test  = test_df.to_numpy()
+y_test  = y_test_df.to_numpy()
 
-# resultTensor = 
-print(target_tensor)
-print(target_tensor.shape)
+
+
+# Look under python3 example 2
 
 # exit()
-X_train, X_test, y_train, y_test = train_test_split(feature_tensor, target_tensor, test_size=0.2, random_state=42, shuffle=True)
+# X_train, X_test, y_train, y_test = train_test_split(feature_tensor, target_tensor, test_size=0.2, random_state=42, shuffle=True)
 # final dense 2
 # Look to adding drop out layers
 # Between dense layers Tell it the fraction of nodes todrop out, between 25-50%
@@ -82,13 +94,16 @@ X_train, X_test, y_train, y_test = train_test_split(feature_tensor, target_tenso
 # chapter 5 148-150 drop out and regularization
 model = keras.Sequential([
     Dense(84, input_dim=X_train.shape[1], activation='relu'),
+    # Dropout(rate=0.25, seed=42),
     Dense(42, activation='relu'),
+    # Dropout(rate=0.1, seed=41),
     Dense(21, activation='relu'),
+
     Dense(2)
 ])
 
 model.compile(loss='mean_squared_error', metrics=['accuracy'])
-history = model.fit(X_train, y_train, epochs=50, batch_size=8, verbose=1, validation_data=(X_test, y_test), shuffle=True)
+history = model.fit(X_train, y_train, epochs=17, batch_size=20, verbose=1, validation_data=(X_test, y_test), shuffle=True)
 
 # history = model1.fit(train_x, train_y,validation_split = 0.1, epochs=50, batch_size=4)
 plt.plot(history.history['accuracy'])
@@ -98,10 +113,21 @@ plt.ylabel('accuracy')
 plt.xlabel('epoch')
 plt.legend(['train', 'val'], loc='upper left')
 plt.show()
-y_pred = model.predict(X_test)
+
+model.save(f'/Users/jackcameback/Classes/Fall2023/MachineLearning/HandTrackingProject/models/{name}.keras')
+
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('model loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['train', 'val'], loc='upper left')
+plt.show()
+
+# y_pred = model.predict(X_test)
 
 
-model.save(f'/Users/jackcameback/Classes/Fall2023/MachineLearning/HandTrackingProject/models/y_{name}.keras')
+
 
 # Make the validation graph
 #  Look for overfitting
