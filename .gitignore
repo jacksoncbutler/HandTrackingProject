@@ -1,4 +1,4 @@
 .venv
-models
+# models
 __pycache__
 # data
