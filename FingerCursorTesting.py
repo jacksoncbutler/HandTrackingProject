@@ -6,6 +6,16 @@ import cv2
 import time
 import json 
 import pandas as pd
+"""IDEA
+Have model predict location andplace dot
+have dots pop up randomly as targets
+
+have a button that signifies that you are aiming at target
+
+feed this dot location into model as a form of supervised learning
+Kind of like giving it real world data
+
+"""
 
 WHITE =     (255, 255, 255)
 BLUE =      (  0,   0, 255)
@@ -14,10 +24,10 @@ RED =       (255,   0,   0)
 TEXTCOLOR = (  0,   0,  0)
 (width, height) = (1680, 1022)
 
-name="other_predict"
+name="small_v6_noShuffle-05"
 
 running = True
-model = keras.models.load_model(f'/Users/jackcameback/Classes/Fall2023/MachineLearning/HandTrackingProject/models/y_{name}.keras')
+model = keras.models.load_model(f'/Users/jackcameback/Classes/Fall2023/MachineLearning/HandTrackingProject/models/{name}.keras')
 
 
 data = {"0":[], "dot":[]}
