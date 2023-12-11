@@ -4,17 +4,18 @@ from HandTrackingModule import HandDetector
 import keras
 import cv2
 import time
-import json 
+import json
 import pandas as pd
+import os
+
 """IDEA
-Have model predict location andplace dot
+Have model predict location and place dot
 have dots pop up randomly as targets
 
 have a button that signifies that you are aiming at target
 
 feed this dot location into model as a form of supervised learning
 Kind of like giving it real world data
-
 """
 
 WHITE =     (255, 255, 255)
@@ -25,9 +26,12 @@ TEXTCOLOR = (  0,   0,  0)
 (width, height) = (1680, 1022)
 
 name="small_v6_noShuffle-05"
-
+modelFiles = "models"
 running = True
-model = keras.models.load_model(f'/Users/jackcameback/Classes/Fall2023/MachineLearning/HandTrackingProject/models/{name}.keras')
+webcam = 1
+
+
+model = keras.models.load_model(os.path.abspath(f"{modelFiles}/{name}.keras"))
 
 
 data = {"0":[], "dot":[]}
@@ -41,7 +45,7 @@ def main():
     pos = (random.randint(0,width),random.randint(0,height))
     drawCircle(pos)
     
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(webcam)
     prevTime = 0
     currentTime = 0
     detector = HandDetector()

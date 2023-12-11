@@ -7,10 +7,12 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from matplotlib import pyplot as plt
+import os
 
 name = "small_v6_noShuffle-05"
+dataFiles = "data"
 
-dataFile = "/Users/jackcameback/Classes/Fall2023/MachineLearning/HandTrackingProject/data/FingerCursorData.json"
+dataFile = os.path.abspath(f"{dataFiles}/{name}.json")
 trainX = [] # train Data
 df = pd.read_json(
     dataFile,
