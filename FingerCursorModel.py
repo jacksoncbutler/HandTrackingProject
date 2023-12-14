@@ -11,8 +11,9 @@ import os
 
 name = "small_v6_noShuffle-05"
 dataFiles = "data"
+fileName = "FingerCursorData"
 
-dataFile = os.path.abspath(f"{dataFiles}/{name}.json")
+dataFile = os.path.abspath(f"{dataFiles}/{fileName}.json")
 trainX = [] # train Data
 df = pd.read_json(
     dataFile,
@@ -116,7 +117,7 @@ plt.xlabel('epoch')
 plt.legend(['train', 'val'], loc='upper left')
 plt.show()
 
-model.save(f'/Users/jackcameback/Classes/Fall2023/MachineLearning/HandTrackingProject/models/{name}.keras')
+model.save(os.path.abspath(f"data/{name}.json"))
 
 plt.plot(history.history['loss'])
 plt.plot(history.history['val_loss'])
