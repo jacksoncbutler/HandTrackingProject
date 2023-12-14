@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 from matplotlib import pyplot as plt
 import os
 
-name = "small_v6_noShuffle-05"
+name = "small_v7_noVal"
 dataFiles = "data"
 fileName = "FingerCursorData"
 
@@ -22,6 +22,7 @@ df = pd.read_json(
 df.drop(["1"], axis=1, inplace=True)
 dataFrame = pd.DataFrame()
 tempDict = {}
+print(dataFrame.shape)
 
 for i in range(len(df['0'])):
 
@@ -68,7 +69,7 @@ print(combined_df)
 indicies = [np.random.randint(0,combined_df.shape[0]) for _ in range(int(combined_df.shape[0]*0.2))]
 
 test_df = combined_df.loc[indicies]
-combined_df.drop(indicies, axis=0, inplace=True)
+# combined_df.drop(indicies, axis=0, inplace=True)
 train_target_df = combined_df[["target"]].copy()
 combined_df.drop("target",axis=1, inplace=True)
 print(combined_df)
@@ -78,6 +79,7 @@ test_df.drop("target",axis=1, inplace=True)
 
 
 print('combined_shape:', combined_df.shape)
+# combined_df = combined_df.sample(frac=1)
 
 X_train = combined_df.to_numpy()
 y_train = train_target_df.to_numpy()
@@ -105,41 +107,28 @@ model = keras.Sequential([
     Dense(2)
 ])
 
+
+#  validation_data=(X_test, y_test)
 model.compile(loss='mean_squared_error', metrics=['accuracy'])
-history = model.fit(X_train, y_train, epochs=17, batch_size=20, verbose=1, validation_data=(X_test, y_test), shuffle=True)
+history = model.fit(X_train, y_train, epochs=17, batch_size=20, verbose=1, shuffle=True)
+model.save(os.path.abspath(f"models/{name}.keras"))
+# # history = model1.fit(train_x, train_y,validation_split = 0.1, epochs=50, batch_size=4)
+# plt.plot(history.history['accuracy'])
+# plt.plot(history.history['val_accuracy'])
+# plt.title('model accuracy')
+# plt.ylabel('accuracy')
+# plt.xlabel('epoch')
+# plt.legend(['train', 'val'], loc='upper left')
+# plt.show()
 
-# history = model1.fit(train_x, train_y,validation_split = 0.1, epochs=50, batch_size=4)
-plt.plot(history.history['accuracy'])
-plt.plot(history.history['val_accuracy'])
-plt.title('model accuracy')
-plt.ylabel('accuracy')
-plt.xlabel('epoch')
-plt.legend(['train', 'val'], loc='upper left')
-plt.show()
 
-model.save(os.path.abspath(f"data/{name}.json"))
 
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.title('model loss')
-plt.ylabel('loss')
-plt.xlabel('epoch')
-plt.legend(['train', 'val'], loc='upper left')
-plt.show()
+# plt.plot(history.history['loss'])
+# plt.plot(history.history['val_loss'])
+# plt.title('model loss')
+# plt.ylabel('loss')
+# plt.xlabel('epoch')
+# plt.legend(['train', 'val'], loc='upper left')
+# plt.show()
 
 # y_pred = model.predict(X_test)
-
-
-
-
-# Make the validation graph
-#  Look for overfitting
-
-
-# For X
-# Mean Squared Error (MSE): 77428.81399834645
-# Mean Absolute Error (MAE): 195.75334760194184
-
-# For Y
-# Mean Squared Error (MSE): 45394.90305828255
-# Mean Absolute Error (MAE): 163.08375705185756

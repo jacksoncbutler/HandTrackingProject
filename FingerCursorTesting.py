@@ -8,6 +8,7 @@ import json
 import pandas as pd
 import os
 import pyautogui
+import tensorflow as tf
 
 
 """IDEA
@@ -27,10 +28,14 @@ RED =       (255,   0,   0)
 TEXTCOLOR = (  0,   0,  0)
 (width, height) = (1680, 1022)
 
-name="small_v6_noShuffle-05"
+name="small_v7_noVal"
 modelFiles = "models"
-model = keras.models.load_model(os.path.abspath(f"{modelFiles}/{name}.keras"))
+# model = keras.models.load_model(os.path.abspath(f"{modelFiles}/{name}.keras"))
 
+loaded_module = tf.saved_model.load(os.path.abspath(f"concreteModels/{name}"))
+concrete_function = loaded_module.func
+
+# concrete_function(tf.constant([[3, 1.2]]))
 
 class Screen:
     def __init__(self, draw=True):
@@ -74,9 +79,16 @@ class Screen:
         combined_df = pd.concat([x_result_df, y_result_df], axis=1)
         # print("COMBINED",combined_df)
         feature_tensor = combined_df.to_numpy()
+
+
+        # print("Normal Prediction",model.predict(tf.constant(feature_tensor), verbose=False))
+        # print("shape:", tf.constant(feature_tensor).shape())
+        output = concrete_function(tf.constant(feature_tensor))
+        x = output[0][0][0]
+        y = output[0][0][1]
+        # print(x,y)
         
-        val = model.predict(feature_tensor, verbose=False)
-        self.drawCircle(val[0])
+        self.drawCircle((x,y))
         
         
     def split_coordinates(self, df):
@@ -116,7 +128,7 @@ def main():
         detector.detect_hands(draw=False)
         detector.find_node_positions_of_hand(draw=False)
         ptime = time.time()
-        print("Detector took:", round(float(ptime-stime),2),"seconds")
+        # print("Detector took:", round(float(ptime-stime),2),"seconds")
         
         # currentTime = time.time()
         # fps = 1/(currentTime-prevTime)
@@ -128,7 +140,7 @@ def main():
         handPos = detector.get_positions(-1)    
         Display.predictLocation(pos, handPos)
         ptime = time.time()
-        print("Predictor took:", round(float(ptime-stime),2),"seconds")
+        # print("Predictor took:", round(float(ptime-stime),2),"seconds")
         # cv2.waitKey(1) 
         
         if Display.draw:
