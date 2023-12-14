@@ -26,7 +26,7 @@ def main():
     
     pygame.init()
     screen = pygame.display.set_mode((width, height))
-    pygame.display.set_caption("TUFF")
+    pygame.display.set_caption("Dataset Generator")
     pos = (random.randint(0,width),random.randint(0,height))
     drawCircle(pos)
     
@@ -97,8 +97,8 @@ def main():
                 
                 if event.key == pygame.K_ESCAPE:
                     print("SAVED")
-                    with open(dataFile, "w") as file:
-                        json.dump(data, file)
+                    # with open(dataFile, "w") as file:
+                    #     json.dump(data, file)
             if event.type == pygame.QUIT:
                 running = False
 
