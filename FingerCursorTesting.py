@@ -7,6 +7,8 @@ import time
 import json
 import pandas as pd
 import os
+import pyautogui
+
 
 """IDEA
 Have model predict location and place dot
@@ -27,125 +29,124 @@ TEXTCOLOR = (  0,   0,  0)
 
 name="small_v6_noShuffle-05"
 modelFiles = "models"
-running = True
-webcam = 1
-
-
 model = keras.models.load_model(os.path.abspath(f"{modelFiles}/{name}.keras"))
 
 
-data = {"0":[], "dot":[]}
+class Screen:
+    def __init__(self, draw=True):
+        
+        self.webcam = 1
+        self.smoothing = 5
+        self.screen = pygame.display.set_mode((width, height))
+        self.running = True
+        self.data = {"0":[], "dot":[]}
+        
+        self.pPosX = 0
+        self.pPosY = 0
+        self.cPosX = 0
+        self.cPosY = 0
+        
+        self.draw = draw
+    
+    def drawCircle(self, pos):
+        self.cPosX = self.pPosX + (pos[0] - self.pPosX)/self.smoothing
+        self.cPosY = self.pPosY + (pos[1] - self.pPosY)/self.smoothing
+        pyautogui.moveTo(self.cPosX, self.cPosY, duration=0)
+        # print(pos, (self.cPosX, self.cPosY),'\n')
+        
+        if self.draw:
+            self.screen.fill(WHITE)
+            pygame.draw.circle(self.screen, BLUE, (self.cPosX, self.cPosY), 20)
+            pygame.display.update()
+        
+        self.pPosX = self.cPosX
+        self.pPosY = self.cPosY
+
+    def predictLocation(self, pos, handPos):
+        
+        self.data["0"] = [handPos[0]]
+        self.data["dot"] = [pos]
+        
+        df = pd.DataFrame.from_dict(self.data["0"])
+
+        x_result_df, y_result_df = self.split_coordinates(df)
+        
+        combined_df = pd.concat([x_result_df, y_result_df], axis=1)
+        # print("COMBINED",combined_df)
+        feature_tensor = combined_df.to_numpy()
+        
+        val = model.predict(feature_tensor, verbose=False)
+        self.drawCircle(val[0])
+        
+        
+    def split_coordinates(self, df):
+        x_data = {}
+        y_data = {} 
+        for col in df.columns:
+            x_data[col] = df[col].apply(lambda x: x[2])  # Extract x-coordinate
+            y_data[col] = df[col].apply(lambda x: x[3])  # Extract y-coordinate
+        x_df = pd.DataFrame(x_data)
+        y_df = pd.DataFrame(y_data)
+        # print("split x_data:",x_df)
+
+        return x_df, y_df
+        
+
+
 
 def main():
-    global running, screen
-    
-    pygame.init()
-    screen = pygame.display.set_mode((width, height))
-    pygame.display.set_caption("TUFF")
+    Display = Screen(draw=False)
     pos = (random.randint(0,width),random.randint(0,height))
-    drawCircle(pos)
+    Display.drawCircle(pos)
     
-    cap = cv2.VideoCapture(webcam)
+    cap = cv2.VideoCapture(Display.webcam)
     prevTime = 0
     currentTime = 0
     detector = HandDetector()
     
-    while running:
+    if Display.draw:
+        pygame.init()
+        
+        pygame.display.set_caption("TUFF")
+    
+    while Display.running:
+        stime = time.time()
         success, img = cap.read()
         detector.img = img
         detector.detect_hands(draw=False)
         detector.find_node_positions_of_hand(draw=False)
-        
+        ptime = time.time()
+        print("Detector took:", round(float(ptime-stime),2),"seconds")
         
         # currentTime = time.time()
         # fps = 1/(currentTime-prevTime)
         # prevTime = currentTime
-        
         # cv2.putText(detector.img, str(int(fps)), (10,70), cv2.FONT_HERSHEY_PLAIN, 3, (255, 0, 255), 3)
-        
-        
-        
         # cv2.imshow("Image", detector.img)
+        
+        stime = time.time()
         handPos = detector.get_positions(-1)    
-        predictLocation(pos, handPos)
-        cv2.waitKey(1) 
+        Display.predictLocation(pos, handPos)
+        ptime = time.time()
+        print("Predictor took:", round(float(ptime-stime),2),"seconds")
+        # cv2.waitKey(1) 
         
-        ev = pygame.event.get()
+        if Display.draw:
+            ev = pygame.event.get()
+            for event in ev:
+                if event.type == pygame.KEYDOWN:
+                    pass
+                if event.type == pygame.KEYUP:
+                    if event.key == pygame.K_a:
+                        handPos = detector.get_positions(-1)    
+                        Display.predictLocation(pos, handPos)
+                    if event.key == pygame.K_s:
+                        pos = (random.randint(0,width),random.randint(0,height))
+                        Display.drawCircle(pos)
+                if event.type == pygame.QUIT:
+                    Display.running = False
 
-        
-        for event in ev:
-            if event.type == pygame.KEYDOWN:
-                pass
-            if event.type == pygame.KEYUP:
-                if event.key == pygame.K_a:
-                    handPos = detector.get_positions(-1)    
-                    predictLocation(pos, handPos)
-                if event.key == pygame.K_s:
-                    pos = (random.randint(0,width),random.randint(0,height))
-                    drawCircle(pos)
-            if event.type == pygame.QUIT:
-                running = False
 
-def drawCircle(pos):
-    screen.fill(WHITE)
-    pygame.draw.circle(screen, BLUE, pos, 20)
-    pygame.display.update()
-
-def predictLocation(pos, handPos):
-    
-    data["0"] = [handPos[0]]
-    data["dot"] = [pos]
-    print("data",len(data["0"]), len(data["dot"]))
-    df = pd.DataFrame.from_dict(data)
-    tempDict = {}
-    
-    for i in range(len(df['0'])):
-
-        for layer in df["0"][i]:
-            try:
-                tempDict[layer[1]].append((layer[2],layer[3]))
-            except:
-                tempDict[layer[1]] = [(layer[2],layer[3])]
-        try:
-            tempDict["target"].append(df["dot"][i])
-        except:
-            tempDict["target"] = [df["dot"][i]]
-        
-    dataFrame = pd.DataFrame.from_dict(tempDict)
-    x_result_df, y_result_df = split_coordinates(dataFrame)
-    
-    print("X DataFrame:")
-    print(x_result_df)
-    print("\nY DataFrame:")
-    print(y_result_df)
-    x_target = pd.Series(x_result_df["target"])
-    x_result_df.drop(["target"], axis=1, inplace=True)
-    print(x_target)
-    y_target = pd.Series(y_result_df["target"])
-    y_result_df.drop(["target"], axis=1, inplace=True)
-    print(y_target)
-    
-    combined_df = pd.concat([x_result_df, y_result_df], axis=1)
-    print(combined_df.shape)
-    feature_tensor = combined_df.to_numpy()
-    
-    val = model.predict(feature_tensor)
-    print(val)
-    # print(x,y)
-    drawCircle(val[0])
-    
-    
-def split_coordinates(df):
-    x_data = {}
-    y_data = {}
-    for col in df.columns:
-        x_data[col] = df[col].apply(lambda x: x[0])  # Extract x-coordinate
-        y_data[col] = df[col].apply(lambda x: x[1])  # Extract y-coordinate
-    x_df = pd.DataFrame(x_data)
-    y_df = pd.DataFrame(y_data)
-
-    return x_df, y_df
-    
     
 
 if __name__ == '__main__':
