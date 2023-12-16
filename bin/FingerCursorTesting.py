@@ -57,6 +57,7 @@ class Screen:
         self.running = True
         self.data = {"0":[], "1":[], "dot":[]}
         self.targetMap = {0:'idle', 1:'lclick', 2:'rclick'}
+        self.prevGesture = 'idle'
 
         
         self.pPosX = 0
@@ -158,23 +159,27 @@ class Screen:
         # print("num valid incidiecs:", len(valid_idx))
         gestureIndex = np.argmax(result[0])
         if result[0][gestureIndex] >= self.threshold:
-            gesture = self.targetMap[gestureIndex]
-            print("Gesture Prediction:",self.targetMap[gestureIndex])
-            if gesture == 'lclick':
-                self.mouse.click(Button.left)
+            gesture = self.targetMap[gestureIndex]    
+            if gesture == 'idle':
+                pass
+            elif gesture == 'lclick':
+                if self.prevGesture != 'lclick':
+                    self.mouse.press(Button.left)
             elif gesture == 'rclick':
-                self.mouse.click(Button.right)
+                if self.prevGesture != 'rclick':
+                    self.mouse.press(Button.right)
+            
+            self.prevGesture = gesture
         else:
-            print("Gesture Prediction: idle")
-        # gesture = valid_idx[np.argmax(result[valid_idx])]
-        # print(gesture)
-        # gesture = self.targetMap[np.argmax(result)]
-        # print("Gesture Prediction:",gesture)
-       
+            gesture = 'idle'
         
-
-        
-
+            
+        if self.prevGesture == 'lclick' and gesture != 'lclick':
+            self.mouse.release(Button.left)
+        if self.prevGesture == 'rclick' and gesture != 'rclick':
+            self.mouse.release(Button.right)
+        print("Gesture Prediction:", gesture)
+        self.prevGesture = gesture
 
 
 def main():
