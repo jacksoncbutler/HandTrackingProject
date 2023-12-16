@@ -71,11 +71,18 @@ class HandDetector:
         return returnLyst
     
     
-    def detect_hands(self, draw=True):
+    def detect_hands(self, handVal=-1, draw=True):
         if self.img_process_result.multi_hand_landmarks:
-            for hand in self.img_process_result.multi_hand_landmarks:
+            if handVal==-1:
+                for hand in self.img_process_result.multi_hand_landmarks:
+                    if draw:
+                        self.mpDraw.draw_landmarks(self.img, hand, self.mpHands.HAND_CONNECTIONS)
+            if handVal==0:
+
+                handInfo = self.img_process_result.multi_hand_landmarks[0]
+
                 if draw:
-                    self.mpDraw.draw_landmarks(self.img, hand, self.mpHands.HAND_CONNECTIONS)
+                    self.mpDraw.draw_landmarks(self.img, handInfo, self.mpHands.HAND_CONNECTIONS)
     
     
     def find_node_positions_of_hand(self, draw=True):

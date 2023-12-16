@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 from matplotlib import pyplot as plt
 import os
 
-name = "small_v7_noVal"
+name = "small_v7-dropout"
 dataFiles = "data"
 fileName = "FingerCursorData"
 
@@ -69,7 +69,7 @@ print(combined_df)
 indicies = [np.random.randint(0,combined_df.shape[0]) for _ in range(int(combined_df.shape[0]*0.2))]
 
 test_df = combined_df.loc[indicies]
-# combined_df.drop(indicies, axis=0, inplace=True)
+combined_df.drop(indicies, axis=0, inplace=True)
 train_target_df = combined_df[["target"]].copy()
 combined_df.drop("target",axis=1, inplace=True)
 print(combined_df)
@@ -99,7 +99,7 @@ y_test  = y_test_df.to_numpy()
 # chapter 5 148-150 drop out and regularization
 model = keras.Sequential([
     Dense(84, input_dim=X_train.shape[1], activation='relu'),
-    # Dropout(rate=0.25, seed=42),
+    # Dropout(rate=0.25),
     Dense(42, activation='relu'),
     # Dropout(rate=0.1, seed=41),
     Dense(21, activation='relu'),
@@ -110,25 +110,24 @@ model = keras.Sequential([
 
 #  validation_data=(X_test, y_test)
 model.compile(loss='mean_squared_error', metrics=['accuracy'])
-history = model.fit(X_train, y_train, epochs=17, batch_size=20, verbose=1, shuffle=True)
+history = model.fit(X_train, y_train, epochs=17, batch_size=20, ,verbose=1, shuffle=True)
 model.save(os.path.abspath(f"models/{name}.keras"))
-# # history = model1.fit(train_x, train_y,validation_split = 0.1, epochs=50, batch_size=4)
-# plt.plot(history.history['accuracy'])
-# plt.plot(history.history['val_accuracy'])
-# plt.title('model accuracy')
-# plt.ylabel('accuracy')
-# plt.xlabel('epoch')
-# plt.legend(['train', 'val'], loc='upper left')
-# plt.show()
 
+# history = model1.fit(train_x, train_y,validation_split = 0.1, epochs=50, batch_size=4)
+plt.plot(history.history['accuracy'])
+plt.plot(history.history['val_accuracy'])
+plt.title('model accuracy')
+plt.ylabel('accuracy')
+plt.xlabel('epoch')
+plt.legend(['train', 'val'], loc='upper left')
+plt.show()
 
-
-# plt.plot(history.history['loss'])
-# plt.plot(history.history['val_loss'])
-# plt.title('model loss')
-# plt.ylabel('loss')
-# plt.xlabel('epoch')
-# plt.legend(['train', 'val'], loc='upper left')
-# plt.show()
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('model loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['train', 'val'], loc='upper left')
+plt.show()
 
 # y_pred = model.predict(X_test)

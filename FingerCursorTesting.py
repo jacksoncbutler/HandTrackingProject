@@ -9,6 +9,10 @@ import pandas as pd
 import os
 import pyautogui
 import tensorflow as tf
+import timeit
+import cProfile
+from pynput.mouse import Controller
+# import pyautogui
 
 
 """IDEA
@@ -28,20 +32,16 @@ RED =       (255,   0,   0)
 TEXTCOLOR = (  0,   0,  0)
 (width, height) = (1680, 1022)
 
-name="small_v7_noVal"
-modelFiles = "models"
-# model = keras.models.load_model(os.path.abspath(f"{modelFiles}/{name}.keras"))
 
-loaded_module = tf.saved_model.load(os.path.abspath(f"concreteModels/{name}"))
-concrete_function = loaded_module.func
 
-# concrete_function(tf.constant([[3, 1.2]]))
+    
 
 class Screen:
     def __init__(self, draw=True):
+        self.mouse = Controller()
         
         self.webcam = 1
-        self.smoothing = 5
+        self.smoothing = 3
         self.screen = pygame.display.set_mode((width, height))
         self.running = True
         self.data = {"0":[], "dot":[]}
@@ -52,23 +52,37 @@ class Screen:
         self.cPosY = 0
         
         self.draw = draw
+        
+        self.name="small_v7_noVal_lite"
+        self.modelType = "tflite"
+        self.modelDir = "liteModels"
+
+        if self.modelType == "keras":
+            self.model = keras.models.load_model(os.path.abspath(f"{self.modelDir}/{self.name}.keras"))
+            self.model.summary()
+        if self.modelType == "concrete":
+            self.loaded_module = tf.saved_model.load(os.path.abspath(f"{self.modelDir}/{self.name}"))
+            self.concrete_function = self.loaded_module.func
+        if self.modelType == "tflite":
+            self.interpreter = tf.lite.Interpreter(os.path.abspath(f"{self.modelDir}/{self.name}.tflite"))
+            # tflite_model = interpreter.get_signature_runner()
+            self.interpreter.allocate_tensors()
+            self.input_details = self.interpreter.get_input_details()
+            self.output_details = self.interpreter.get_output_details()
     
     def drawCircle(self, pos):
         self.cPosX = self.pPosX + (pos[0] - self.pPosX)/self.smoothing
         self.cPosY = self.pPosY + (pos[1] - self.pPosY)/self.smoothing
-        pyautogui.moveTo(self.cPosX, self.cPosY, duration=0)
-        # print(pos, (self.cPosX, self.cPosY),'\n')
-        
-        if self.draw:
-            self.screen.fill(WHITE)
-            pygame.draw.circle(self.screen, BLUE, (self.cPosX, self.cPosY), 20)
-            pygame.display.update()
-        
+        # pyautogui.PAUSE=0
+        # pyautogui.MINIMUM_SLEEP = 0
+        # pyautogui.moveTo(self.cPosX, self.cPosY, duration=0.02, _pause=False) 
+        mousePos = self.mouse.position
+        self.mouse.move(self.cPosX-mousePos[0],self.cPosY-mousePos[1])
         self.pPosX = self.cPosX
         self.pPosY = self.cPosY
 
     def predictLocation(self, pos, handPos):
-        
+
         self.data["0"] = [handPos[0]]
         self.data["dot"] = [pos]
         
@@ -80,15 +94,26 @@ class Screen:
         # print("COMBINED",combined_df)
         feature_tensor = combined_df.to_numpy()
 
-
-        # print("Normal Prediction",model.predict(tf.constant(feature_tensor), verbose=False))
-        # print("shape:", tf.constant(feature_tensor).shape())
-        output = concrete_function(tf.constant(feature_tensor))
-        x = output[0][0][0]
-        y = output[0][0][1]
+        if self.modelType == "keras":
+            pos = self.model.predict(tf.constant(feature_tensor), verbose=False)
+            # print("shape:", tf.constant(feature_tensor).shape()
+        if self.modelType == "concrete":
+            output = self.concrete_function(tf.constant(feature_tensor))
+            x = output[0][0][0]
+            y = output[0][0][1]
         # print(x,y)
-        
+        if self.modelType == "tflite":
+            self.interpreter.set_tensor(self.input_details[0]['index'], feature_tensor)
+            self.interpreter.invoke()
+            output = self.interpreter.get_tensor(self.output_details[0]['index'])
+            # print(output)
+            x = output[0][0]
+            y = output[0][1]
+
+
+        # cProfile.runctx("self.drawCircle((x,y))", globals(), locals())
         self.drawCircle((x,y))
+        
         
         
     def split_coordinates(self, df):
@@ -109,7 +134,7 @@ class Screen:
 def main():
     Display = Screen(draw=False)
     pos = (random.randint(0,width),random.randint(0,height))
-    Display.drawCircle(pos)
+    # Display.drawCircle(pos)
     
     cap = cv2.VideoCapture(Display.webcam)
     prevTime = 0
@@ -124,24 +149,25 @@ def main():
     while Display.running:
         stime = time.time()
         success, img = cap.read()
+        # print("Predictor took:", round(float(time.time()-stime),2),"seconds")
         detector.img = img
-        detector.detect_hands(draw=False)
+        # print("Predictor took:", round(float(time.time()-stime),2),"seconds")
+        detector.detect_hands(0, draw=False)
+        # cProfile.runctx("detector.detect_hands(draw=False)", globals(), locals())
+
+        
         detector.find_node_positions_of_hand(draw=False)
-        ptime = time.time()
-        # print("Detector took:", round(float(ptime-stime),2),"seconds")
+        # cProfile.runctx("detector.find_node_positions_of_hand(draw=False)", globals(), locals())
+
         
-        # currentTime = time.time()
-        # fps = 1/(currentTime-prevTime)
-        # prevTime = currentTime
-        # cv2.putText(detector.img, str(int(fps)), (10,70), cv2.FONT_HERSHEY_PLAIN, 3, (255, 0, 255), 3)
-        # cv2.imshow("Image", detector.img)
+        handPos = detector.get_positions(0)    
+        # cProfile.runctx("detector.get_positions(-1)", globals(), locals())
         
-        stime = time.time()
-        handPos = detector.get_positions(-1)    
-        Display.predictLocation(pos, handPos)
-        ptime = time.time()
-        # print("Predictor took:", round(float(ptime-stime),2),"seconds")
-        # cv2.waitKey(1) 
+
+        # cProfile.runctx("Display.predictLocation(pos, handPos)", globals(), locals())
+        Display.predictLocation(pos, handPos)   
+        # print("GetTime:", round(getTime-stimei,2))
+
         
         if Display.draw:
             ev = pygame.event.get()
